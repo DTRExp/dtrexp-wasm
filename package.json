@@ -1,0 +1,50 @@
+{
+  "name": "dtrexp-wasm",
+  "version": "1.0.0",
+  "description": "DTRExp evaluated by the Rust core, compiled to WebAssembly — compact date-time range & recurrence expressions.",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "pkg",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "wasm-pack build --target web --release --out-dir pkg --no-pack && rm -f pkg/.gitignore",
+    "test": "node --test",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "repository": "DTRExp/dtrexp-wasm",
+  "homepage": "https://github.com/DTRExp/dtrexp-wasm#readme",
+  "bugs": {
+    "url": "https://github.com/DTRExp/dtrexp-wasm/issues"
+  },
+  "keywords": [
+    "dtrexp",
+    "wasm",
+    "webassembly",
+    "date",
+    "time",
+    "range",
+    "recurrence",
+    "schedule",
+    "cron",
+    "rrule",
+    "coverage",
+    "expression"
+  ],
+  "author": "Onur Yıldırım <onur@cutepilot.com>",
+  "license": "MIT"
+}

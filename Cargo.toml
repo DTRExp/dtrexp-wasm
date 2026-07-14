@@ -1,0 +1,20 @@
+[package]
+name = "dtrexp-wasm"
+version = "1.0.0"
+edition = "2021"
+description = "DTRExp for WebAssembly — the dtrexp Rust core compiled for JS hosts (spec draft 2.8)"
+license = "MIT"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Pre-flip path dependency; switches to `version = "1"` once the crate is on crates.io.
+dtrexp = { path = "../dtrexp-rs", features = ["host-tz"] }
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+
+[profile.release]
+opt-level = "s"
+lto = true

@@ -1,0 +1,11 @@
+# build artifacts
+target/
+pkg/
+node_modules/
+
+# working notes
+_notes/
+_backup/
+
+# os
+.DS_Store
