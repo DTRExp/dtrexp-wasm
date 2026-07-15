@@ -83,6 +83,13 @@ WebAssembly has no zoneinfo filesystem, so this package does not ship a time-zon
 
 The spec's test vectors are the contract ([spec §12][spec-conformance]); this package vendors `vectors.json` and runs all of it in its test suite — 97 groups, 409 checks, including the coverage groups evaluated through the `Intl` zone bridge.
 
+## Related Projects
+
+- [**dtrexp** (spec)][spec] — the DTRExp specification (grammar, semantics, conformance vectors) this package implements.
+- [**dtrexp-rs**][rs] — the Rust core this package compiles to WebAssembly.
+- [**dtrexp-js**][js] — the reference implementation; the pure-TypeScript alternative on npm.
+- [**dtrexp-py**][py] · [**dtrexp-go**][go] · [**dtrexp-swift**][swift] · [**dtrexp-java**][java] — the other implementations; same core interface.
+
 ## License
 
 MIT — © 2026, Onur Yıldırım.
@@ -91,3 +98,8 @@ MIT — © 2026, Onur Yıldırım.
 [rs]: https://github.com/DTRExp/dtrexp-rs
 [api]: https://github.com/DTRExp/dtrexp/blob/main/API.md
 [spec-conformance]: https://github.com/DTRExp/dtrexp/blob/main/spec.md#12-conformance
+[spec]: https://github.com/DTRExp/dtrexp
+[py]: https://github.com/DTRExp/dtrexp-py
+[go]: https://github.com/DTRExp/dtrexp-go
+[swift]: https://github.com/DTRExp/dtrexp-swift
+[java]: https://github.com/DTRExp/dtrexp-java
