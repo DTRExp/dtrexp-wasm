@@ -16,7 +16,9 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 
 [[package]]
 name = "dtrexp"
-version = "0.1.0"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b3ae0f6c7797e84a5160d013b168353289df4ff410cdbea31e2574e9405d17a"
 
 [[package]]
 name = "dtrexp-wasm"
