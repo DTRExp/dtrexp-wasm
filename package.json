@@ -1,6 +1,6 @@
 {
   "name": "dtrexp-wasm",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "DTRExp evaluated by the Rust core, compiled to WebAssembly — compact date-time range & recurrence expressions.",
   "type": "module",
   "main": "./index.js",
@@ -19,7 +19,7 @@
     "LICENSE"
   ],
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "build": "wasm-pack build --target web --release --out-dir pkg --no-pack && rm -f pkg/.gitignore",
@@ -27,7 +27,7 @@
     "prepublishOnly": "npm run build && npm test"
   },
   "repository": "DTRExp/dtrexp-wasm",
-  "homepage": "https://github.com/DTRExp/dtrexp-wasm#readme",
+  "homepage": "https://dtrexp.org",
   "bugs": {
     "url": "https://github.com/DTRExp/dtrexp-wasm/issues"
   },
