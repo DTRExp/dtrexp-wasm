@@ -2,7 +2,7 @@
 name = "dtrexp-wasm"
 version = "1.0.0"
 edition = "2021"
-description = "DTRExp for WebAssembly — the dtrexp Rust core compiled for JS hosts (spec draft 2.8)"
+description = "DTRExp for WebAssembly — the dtrexp Rust core compiled for JS hosts (spec draft 2.9)"
 license = "MIT"
 publish = false
 

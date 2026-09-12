@@ -78,5 +78,5 @@ test('a parsed expression exposes source, frozen warnings and toString', () => {
 });
 
 test('SPEC_DRAFT names the implemented draft', () => {
-  assert.equal(SPEC_DRAFT, 2.8);
+  assert.equal(SPEC_DRAFT, 2.9);
 });

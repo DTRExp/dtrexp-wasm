@@ -50,7 +50,7 @@ pub fn parse(expression: &str) -> Result<Expression, JsValue> {
     }
 }
 
-/// A parsed, validated DTRExp (spec draft 2.8).
+/// A parsed, validated DTRExp (spec draft 2.9).
 #[wasm_bindgen]
 pub struct Expression {
     inner: Dtrexp,

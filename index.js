@@ -167,4 +167,4 @@ export function validate(expression) {
 }
 
 /** The DTRExp specification draft this package implements. */
-export const SPEC_DRAFT = 2.8;
+export const SPEC_DRAFT = 2.9;
