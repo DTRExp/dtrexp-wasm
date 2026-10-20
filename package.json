@@ -1,6 +1,6 @@
 {
   "name": "dtrexp-wasm",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "DTRExp evaluated by the Rust core, compiled to WebAssembly — compact date-time range & recurrence expressions.",
   "type": "module",
   "main": "./index.js",

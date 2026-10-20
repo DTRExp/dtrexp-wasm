@@ -1,9 +1,10 @@
 # dtrexp-wasm Changelog
 
-## Unreleased
+## 1.0.2
 
 - Fixed an issue where a bare zone string in the options slot, `covers(t, 'Europe/Berlin')`, was ignored and the call evaluated in UTC. It throws `TypeError` now; pass `{ tz: 'Europe/Berlin' }`.
 - Fixed an issue where a `tz` that is not a string crashed the WebAssembly module (`RuntimeError: memory access out of bounds`). It throws `TypeError` now.
+- `SPEC_DRAFT` is `2.9`. Core draft 2.9 is byte-identical to 2.8, so behavior is unchanged.
 
 ## 1.0.1
 
