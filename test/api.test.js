@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import { DTRExp, DTRExpSyntaxError, parse, SPEC_DRAFT, validate } from '../index.js';
 
 // 2026-07-07 (a Tuesday) 10:00:00Z — inside business hours, in every input shape.
-const TUE_10_UTC = 1_783_591_200_000;
+const TUE_10_UTC = 1_783_418_400_000;
 
 test('covers accepts Date, epoch ms, ISO string and Temporal-shaped inputs', () => {
   const expr = parse('T0900:1800 E1:5');
