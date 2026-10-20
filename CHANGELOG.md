@@ -1,5 +1,10 @@
 # dtrexp-wasm Changelog
 
+## Unreleased
+
+- Fixed an issue where a bare zone string in the options slot, `covers(t, 'Europe/Berlin')`, was ignored and the call evaluated in UTC. It throws `TypeError` now; pass `{ tz: 'Europe/Berlin' }`.
+- Fixed an issue where a `tz` that is not a string crashed the WebAssembly module (`RuntimeError: memory access out of bounds`). It throws `TypeError` now.
+
 ## 1.0.1
 
 - Node.js floor lowered to `>=20.0.0` (was `>=22.0.0`) — the wrapper uses `node:fs/promises`, dynamic import and global `fetch`, nothing newer than Node 18; the conformance suite verified on Node 20.

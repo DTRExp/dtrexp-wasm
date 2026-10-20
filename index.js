@@ -113,6 +113,19 @@ function toEpochMs(input) {
   throw new TypeError('Expected a Date, epoch milliseconds, ISO 8601 string or Temporal instant');
 }
 
+/** The zone a call evaluates in; a non-string would reach the module as a bad pointer. */
+function zoneOf(opts) {
+  if (typeof opts === 'string') {
+    throw new TypeError(`Pass the time zone as { tz: '${opts}' }`);
+  }
+  const tz = opts?.tz;
+  if (tz == null) return 'UTC';
+  if (typeof tz !== 'string') {
+    throw new TypeError(`Expected a time zone name, got ${typeof tz}`);
+  }
+  return tz;
+}
+
 function checkFinite(ms) {
   if (!Number.isFinite(ms)) throw new TypeError('Invalid instant');
   return ms;
@@ -135,7 +148,7 @@ export class DTRExp {
    *  (IANA identifier; default `'UTC'`). An unknown zone throws a `RangeError`.
    */
   covers(instant, opts) {
-    return this.#inner.covers(toEpochMs(instant), opts?.tz ?? 'UTC');
+    return this.#inner.covers(toEpochMs(instant), zoneOf(opts));
   }
 
   toString() {

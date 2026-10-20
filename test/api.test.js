@@ -34,6 +34,21 @@ test('the zone parameter defaults to UTC and accepts an IANA identifier', () => 
   assert.equal(expr.covers(t, { tz: 'Etc/UTC' }), false);
 });
 
+test('a zone passed any way but as a { tz } string throws a TypeError', () => {
+  const expr = parse('T0900:1800 E1:5');
+  const t = '2026-07-07T07:00:00Z';
+  assert.throws(() => expr.covers(t, 'Europe/Berlin'), {
+    name: 'TypeError',
+    message: "Pass the time zone as { tz: 'Europe/Berlin' }"
+  });
+  assert.throws(() => expr.covers(t, { tz: 42 }), {
+    name: 'TypeError',
+    message: 'Expected a time zone name, got number'
+  });
+  assert.equal(expr.covers(t, { tz: 'Europe/Berlin' }), true); // the module survived
+  assert.equal(expr.covers(t, { tz: null }), false); // null is no zone: UTC
+});
+
 test('an unknown zone throws a RangeError, like Intl everywhere', () => {
   const expr = parse('T0900:1800');
   assert.throws(() => expr.covers(TUE_10_UTC, { tz: 'Not/AZone' }), RangeError);
