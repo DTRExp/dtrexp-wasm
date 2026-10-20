@@ -3,6 +3,7 @@
 ## Unreleased
 
 - `withZone(tz)`: a copy of the expression whose evaluation defaults to `tz`, readable as `zone`, so code that evaluates one expression in one zone stops passing `{ tz }` to every call. The original is left as it is; a `{ tz }` passed to a call still wins. An unknown zone throws `RangeError` at once, and a missing one (`undefined`, `null`, not a string) `TypeError` rather than binding the host's zone.
+- An empty zone (`{ tz: '' }`) throws `RangeError` instead of evaluating in UTC, as an unknown zone does.
 - A parsed expression is frozen, bound or not; code that wrote to an instance throws `TypeError` now (in strict mode, which every ES module is).
 
 ## 1.0.2

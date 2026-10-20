@@ -122,11 +122,12 @@ function zoneOf(opts, bound) {
   return tz == null ? (bound ?? 'UTC') : checkZoneName(tz);
 }
 
-/** A non-string would reach the module as a bad pointer. */
+/** A non-string would reach the module as a bad pointer, and the core reads `''` as UTC. */
 function checkZoneName(tz) {
   if (typeof tz !== 'string') {
     throw new TypeError(`Expected a time zone name, got ${tz === null ? 'null' : typeof tz}`);
   }
+  if (tz === '') throw new RangeError('A time zone name is required');
   return tz;
 }
 

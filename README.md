@@ -72,7 +72,7 @@ Fails with a positioned `DTRExpSyntaxError` (`position`, `expression` properties
 
 **returns** `Boolean`.
 
-An unknown zone throws a `RangeError`; exactly what `Intl` itself throws for one. A zone passed any other way than as a `{ tz }` string throws a `TypeError` (`covers(t, 'Europe/Berlin')` included); `null` means no zone: the bound one, else UTC.
+An unknown zone throws a `RangeError`; exactly what `Intl` itself throws for one. So does an empty one. A zone passed any other way than as a `{ tz }` string throws a `TypeError` (`covers(t, 'Europe/Berlin')` included); `null` means no zone: the bound one, else UTC.
 
 ### `DTRExp#withZone(tz)`
 

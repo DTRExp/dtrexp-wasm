@@ -61,6 +61,10 @@ test('withZone binds a default zone and leaves the original unbound', () => {
   assert.equal(berlin.covers(t, {}), true);
   assert.equal(berlin.covers(t, { tz: null }), true); // null is no zone: the bound one
   assert.equal(berlin.covers(t, { tz: 'UTC' }), false); // a call's zone wins
+  assert.throws(() => berlin.covers(t, { tz: '' }), {
+    name: 'RangeError',
+    message: 'A time zone name is required'
+  }); // not quietly UTC
   assert.equal(expr.withZone('UTC').covers(t, { tz: 'Europe/Berlin' }), true);
   const tokyo = berlin.withZone('Asia/Tokyo'); // 16:00 there
   assert.equal(tokyo.zone, 'Asia/Tokyo');
