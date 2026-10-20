@@ -12,7 +12,7 @@
 
 > This module is **ESM** 🔆. Please [**read this**](https://gist.github.com/onury/d3f3d765d7db2e8b2d050d14315f2ac7).
 
-**[DTRExp](https://github.com/DTRExp/dtrexp)** (read: "**DTR Expression**") evaluated by the [Rust core][rs], compiled to WebAssembly for JS hosts — browsers, Node, Deno, edge runtimes.
+**[DTRExp](https://github.com/DTRExp/dtrexp)** (read: "**DTR Expression**") evaluated by the [Rust core][rs], compiled to WebAssembly for JS hosts: browsers, Node, Deno and Bun (edge runtimes with WebAssembly support are untested).
 
 ```
 T0900:1800 E1:5          Mon–Fri, 09:00–18:00
