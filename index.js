@@ -113,15 +113,19 @@ function toEpochMs(input) {
   throw new TypeError('Expected a Date, epoch milliseconds, ISO 8601 string or Temporal instant');
 }
 
-/** The zone a call evaluates in; a non-string would reach the module as a bad pointer. */
-function zoneOf(opts) {
+/** The zone a call evaluates in: its own `{ tz }`, else the bound zone, else UTC. */
+function zoneOf(opts, bound) {
   if (typeof opts === 'string') {
     throw new TypeError(`Pass the time zone as { tz: '${opts}' }`);
   }
   const tz = opts?.tz;
-  if (tz == null) return 'UTC';
+  return tz == null ? (bound ?? 'UTC') : checkZoneName(tz);
+}
+
+/** A non-string would reach the module as a bad pointer. */
+function checkZoneName(tz) {
   if (typeof tz !== 'string') {
-    throw new TypeError(`Expected a time zone name, got ${typeof tz}`);
+    throw new TypeError(`Expected a time zone name, got ${tz === null ? 'null' : typeof tz}`);
   }
   return tz;
 }
@@ -135,20 +139,36 @@ function checkFinite(ms) {
 export class DTRExp {
   #inner;
 
-  constructor(inner, source) {
+  constructor(inner, source, zone, warnings = Object.freeze(inner.warnings)) {
     this.#inner = inner;
     /** The source expression, verbatim. */
     this.source = source;
     /** The §9.1 unsatisfiability warnings — same content as `validate(source).warnings`. */
-    this.warnings = Object.freeze(inner.warnings);
+    this.warnings = warnings;
+    /** The bound evaluation zone ({@link DTRExp#withZone}), or `undefined`. */
+    this.zone = zone;
+    Object.freeze(this);
+  }
+
+  /**
+   *  A copy whose evaluation defaults to `tz`, readable as `zone`; this one is
+   *  left as it is. A `{ tz }` passed to a call still wins. An unknown zone
+   *  throws `Intl`'s `RangeError` at once, and one that is not a string a
+   *  `TypeError` (`Intl` would read `undefined` as the host's zone).
+   */
+  withZone(tz) {
+    const name = new Intl.DateTimeFormat('en-US', { timeZone: checkZoneName(tz) }).resolvedOptions()
+      .timeZone;
+    return new DTRExp(this.#inner, this.source, name, this.warnings);
   }
 
   /**
    *  Whether the expression covers the given instant, evaluated in `opts.tz`
-   *  (IANA identifier; default `'UTC'`). An unknown zone throws a `RangeError`.
+   *  (IANA identifier), else the bound `zone`, else `'UTC'`. An unknown zone
+   *  throws a `RangeError`.
    */
   covers(instant, opts) {
-    return this.#inner.covers(toEpochMs(instant), zoneOf(opts));
+    return this.#inner.covers(toEpochMs(instant), zoneOf(opts, this.zone));
   }
 
   toString() {

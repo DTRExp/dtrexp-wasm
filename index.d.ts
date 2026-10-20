@@ -13,8 +13,8 @@ export type DateInput = Date | number | string | IEpochHolder;
 
 /** Evaluation options — the time zone is always a parameter, never part of the expression. */
 export interface IEvalOptions {
-  /** IANA time zone for evaluation. Default: `'UTC'`. */
-  tz?: string;
+  /** IANA time zone for evaluation. Default (or `null`): the bound `zone`, else `'UTC'`. */
+  tz?: string | null;
 }
 
 /** One positioned diagnostic. */
@@ -46,10 +46,24 @@ export class DTRExp {
   readonly source: string;
   /** The spec §9.1 unsatisfiability warnings — same content as `validate(source).warnings`. */
   readonly warnings: readonly IIssue[];
+  /** The bound evaluation zone ({@link DTRExp.withZone}) as `Intl` names it, or `undefined`. */
+  readonly zone: string | undefined;
+
+  /**
+   *  A copy whose evaluation defaults to `tz`; this one is left as it is. A
+   *  `{ tz }` passed to a call still wins. Throws `RangeError` at once on an
+   *  unknown zone, and `TypeError` when `tz` is not a string.
+   *
+   *  @example
+   *  const hours = parse('T0900:1800 E1:5').withZone('Europe/Berlin');
+   *  hours.covers(new Date()); // evaluated in Berlin
+   */
+  withZone(tz: string): DTRExp;
 
   /**
    *  Whether the expression covers the given instant, evaluated in `opts.tz`
-   *  (IANA identifier; default `'UTC'`). An unknown zone throws a `RangeError`.
+   *  (IANA identifier), else the bound `zone`, else `'UTC'`. An unknown zone
+   *  throws a `RangeError`.
    *
    *  @example
    *  parse('T0900:1800 E1:5').covers(new Date(), { tz: 'Europe/Berlin' });

@@ -40,6 +40,9 @@ const dtr = parse('T0900:1800 E1:5'); // business hours
 dtr.covers(new Date(), { tz: 'Europe/Berlin' }); // —> true
 dtr.covers('2026-07-11T10:00:00Z'); // —> false (a Saturday, evaluated in UTC)
 
+const store = dtr.withZone('Europe/Berlin'); // the zone, bound once
+store.covers(new Date()); // evaluated in Berlin
+
 validate('D30 M2');
 // —> { valid: true, errors: [], warnings: [{ message: '…unsatisfiable…', position: 0 }] }
 ```
@@ -65,11 +68,23 @@ Fails with a positioned `DTRExpSyntaxError` (`position`, `expression` properties
 ### `DTRExp#covers(instant [, opts])`
 
 - *instant* `Date | number | string | { epochMilliseconds }` — Required. The instant to test.
-- *opts.tz* `String` — Optional. An IANA time-zone identifier (e.g. `"Europe/Berlin"`). Default: **`"UTC"`**.
+- *opts.tz* `String` — Optional. An IANA time-zone identifier (e.g. `"Europe/Berlin"`). Default: the bound `zone` (`withZone()`), else **`"UTC"`**.
 
 **returns** `Boolean`.
 
-An unknown zone throws a `RangeError`; exactly what `Intl` itself throws for one. A zone passed any other way than as a `{ tz }` string throws a `TypeError` (`covers(t, 'Europe/Berlin')` included); `null` means UTC.
+An unknown zone throws a `RangeError`; exactly what `Intl` itself throws for one. A zone passed any other way than as a `{ tz }` string throws a `TypeError` (`covers(t, 'Europe/Berlin')` included); `null` means no zone: the bound one, else UTC.
+
+### `DTRExp#withZone(tz)`
+
+- *tz* `String` — Required. An IANA time-zone identifier.
+
+**returns** a copy of the expression whose evaluation defaults to `tz`; the original is left as it is, and the copy's `source` and `warnings` are the same. A `{ tz }` passed to a call still wins. An unknown zone throws a `RangeError` at once, and one that is not a string a `TypeError`.
+
+### `DTRExp#zone`
+
+The bound zone as `Intl` names it (`'utc'` → `'UTC'`, `'europe/berlin'` → `'Europe/Berlin'`), or `undefined` when none is bound. A parsed expression is frozen, bound or not.
+
+**Which to use:** bind the zone with `withZone()` when it belongs to what the expression describes (a store's hours, a venue's schedule), and pass `{ tz }` per call when it belongs to whoever is asking (a rule shown to each user in their own zone). A bound copy shares its `source` with the original, so a cache of parsed expressions keys on `source` and `zone` together.
 
 ### `DTRExp#warnings`
 

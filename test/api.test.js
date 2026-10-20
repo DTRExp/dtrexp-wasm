@@ -49,6 +49,58 @@ test('a zone passed any way but as a { tz } string throws a TypeError', () => {
   assert.equal(expr.covers(t, { tz: null }), false); // null is no zone: UTC
 });
 
+test('withZone binds a default zone and leaves the original unbound', () => {
+  const expr = parse('T0900:1800 E1:5');
+  const t = '2026-07-07T07:00:00Z'; // 09:00 in Berlin
+  const berlin = expr.withZone('Europe/Berlin');
+  assert.notEqual(berlin, expr);
+  assert.equal(berlin.zone, 'Europe/Berlin');
+  assert.equal(expr.zone, undefined);
+  assert.equal(berlin.covers(t), true);
+  assert.equal(expr.covers(t), false);
+  assert.equal(berlin.covers(t, {}), true);
+  assert.equal(berlin.covers(t, { tz: null }), true); // null is no zone: the bound one
+  assert.equal(berlin.covers(t, { tz: 'UTC' }), false); // a call's zone wins
+  assert.equal(expr.withZone('UTC').covers(t, { tz: 'Europe/Berlin' }), true);
+  const tokyo = berlin.withZone('Asia/Tokyo'); // 16:00 there
+  assert.equal(tokyo.zone, 'Asia/Tokyo');
+  assert.equal(tokyo.covers('2026-07-07T09:30:00Z'), false); // 18:30 in Tokyo
+  assert.equal(berlin.covers('2026-07-07T09:30:00Z'), true); // 11:30 in Berlin
+});
+
+test('withZone keeps the expression itself and stores the zone as Intl names it', () => {
+  const expr = parse('D30 M2');
+  const bound = expr.withZone('utc');
+  assert.equal(bound.zone, 'UTC');
+  assert.equal(bound.source, expr.source);
+  assert.equal(bound.toString(), expr.toString());
+  assert.equal(bound.warnings, expr.warnings);
+  assert.equal(expr.withZone('europe/berlin').zone, 'Europe/Berlin');
+});
+
+test('withZone refuses an unknown or a missing zone at once', () => {
+  const expr = parse('T0900:1800');
+  assert.throws(() => expr.withZone('Not/AZone'), RangeError);
+  assert.throws(() => expr.withZone(''), RangeError);
+  assert.throws(() => expr.withZone(undefined), {
+    name: 'TypeError',
+    message: 'Expected a time zone name, got undefined'
+  });
+  assert.throws(() => expr.withZone(null), {
+    name: 'TypeError',
+    message: 'Expected a time zone name, got null'
+  });
+});
+
+test('a parsed expression is frozen, bound or not', () => {
+  const expr = parse('T0900:1800');
+  assert.equal(Object.isFrozen(expr), true);
+  assert.equal(Object.isFrozen(expr.withZone('Europe/Berlin')), true);
+  assert.throws(() => {
+    expr.zone = 'Europe/Berlin';
+  }, TypeError);
+});
+
 test('an unknown zone throws a RangeError, like Intl everywhere', () => {
   const expr = parse('T0900:1800');
   assert.throws(() => expr.covers(TUE_10_UTC, { tz: 'Not/AZone' }), RangeError);
