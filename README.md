@@ -4,8 +4,8 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/dtrexp-wasm"><img src="https://img.shields.io/npm/v/dtrexp-wasm?style=flat&label=&logo=npm&color=C6234B" alt="npm" /></a>
-  <img src="https://img.shields.io/badge/conformance-409%2F409-2BB150?style=flat" alt="conformance 409/409" />
-  <img src="https://img.shields.io/badge/wasm-~63%20KB-654FF0?style=flat" alt="wasm ~63 KB" />
+  <img src="https://img.shields.io/badge/conformance-451%2F451-2BB150?style=flat" alt="conformance 451/451" />
+  <img src="https://img.shields.io/badge/wasm-~65%20KB-654FF0?style=flat" alt="wasm ~65 KB" />
   <a href="https://gist.github.com/onury/d3f3d765d7db2e8b2d050d14315f2ac7"><img src="https://img.shields.io/badge/ESM-F7DF1E?style=flat" alt="ESM" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat" alt="MIT license" /></a>
 </p>
@@ -29,7 +29,7 @@ Note that for most JS applications the reference implementation, **[dtrexp][js]*
 npm i dtrexp-wasm
 ```
 
-The wasm binary (~63 KB, ~29 KB gzipped) ships inside the package and instantiates at import; no fetch configuration, no separate asset step.
+The wasm binary (~65 KB, ~30 KB gzipped) ships inside the package and instantiates at import; no fetch configuration, no separate asset step.
 
 ## Usage
 
@@ -57,7 +57,9 @@ The operation vocabulary is fixed across every DTRExp implementation ([API.md][a
 
 **returns** a `DTRExp` instance.
 
-Fails with a positioned `DTRExpSyntaxError` (`position`, `expression` properties) on invalid input. Parse failure is the only failure; a syntactically valid expression never fails later.
+Fails with a positioned `DTRExpSyntaxError` (`position`, `expression` properties) on invalid input. The `position` is the 0-based offset of the first character of the token at fault, as spec §8 defines it. Parse failure is the only failure of the expression; a syntactically valid expression never fails later.
+
+An integer in an expression is at most 2,147,483,647, however many leading zeros it carries; a larger one is a syntax error at that integer.
 
 ### `validate(expression)`
 
@@ -67,12 +69,12 @@ Fails with a positioned `DTRExpSyntaxError` (`position`, `expression` properties
 
 ### `DTRExp#covers(instant [, opts])`
 
-- *instant* `Date | number | string | { epochMilliseconds }` — Required. The instant to test.
+- *instant* `Date | number | string | { epochMilliseconds }` — Required. The instant to test. A string is an ISO 8601 date-time and must be a real one: `'2020-02-30T00:00:00Z'` throws a `TypeError` instead of rolling over to March 1. Name its offset (`Z` or `±hh:mm`); a string without one is read in the host's zone, as `Date.parse` reads it, and 2.0 will reject it.
 - *opts.tz* `String` — Optional. An IANA time-zone identifier (e.g. `"Europe/Berlin"`). Default: the bound `zone` (`withZone()`), else **`"UTC"`**.
 
 **returns** `Boolean`.
 
-An unknown zone throws a `RangeError`; exactly what `Intl` itself throws for one. So does an empty one. A zone passed any other way than as a `{ tz }` string throws a `TypeError` (`covers(t, 'Europe/Berlin')` included); `null` means no zone: the bound one, else UTC.
+An unknown zone throws a `RangeError` (`Unknown time zone: "…"`); so does an empty one. The accepted names are below, under [Time Zones](#time-zones). A zone passed any other way than as a `{ tz }` string throws a `TypeError` (`covers(t, 'Europe/Berlin')` included); `null` means no zone: the bound one, else UTC.
 
 ### `DTRExp#withZone(tz)`
 
@@ -92,11 +94,13 @@ The spec §9.1 unsatisfiability warnings of a parsed expression; same content as
 
 ## Time Zones
 
-WebAssembly has no zoneinfo filesystem, so this package does not ship a time-zone database. Zone lookups are answered by the host's own IANA data through `Intl.DateTimeFormat` — the same technique the reference implementation uses — which keeps the binary small and the zone data exactly as current as the runtime's. `UTC` (the default) never touches the bridge and evaluates entirely inside the wasm module.
+WebAssembly has no zoneinfo filesystem, so this package does not ship a time-zone database. Zone lookups are answered by the host's own IANA data through `Intl.DateTimeFormat`, the same technique the reference implementation uses; that keeps the binary small and the zone data exactly as current as the runtime's. The rules therefore follow the tz database release the runtime bundles (its ICU data), and pinning a release means pinning the runtime (spec §9). `UTC` (the default) never touches the bridge and evaluates entirely inside the wasm module.
+
+A zone is a tz database zone or link name (`Europe/Berlin`, `US/Eastern`, `UTC`, `Etc/GMT+5`), matched without regard to case and named as `Intl` names it (`'europe/berlin'` → `'Europe/Berlin'`). `Intl` accepts more than that, and those names throw a `RangeError` here: a fixed offset (`'+02:00'`), the `SystemV/…` zones, and the names only ICU knows (`'PST'`, `'IST'` and the other three-letter IDs).
 
 ## Conformance
 
-The spec's test vectors are the contract ([spec §12][spec-conformance]); this package vendors `vectors.json` and runs all of it in its test suite — 97 groups, 409 checks, including the coverage groups evaluated through the `Intl` zone bridge.
+The spec's test vectors are the contract ([spec §12][spec-conformance]); this package implements DTRExp **draft 3**, vendors the draft 3 `vectors.json` and runs all of it in its test suite: 110 groups, 451 checks, including the coverage groups evaluated through the `Intl` zone bridge, and every invalid expression rejected at the position the vector gives.
 
 ## Related Projects
 

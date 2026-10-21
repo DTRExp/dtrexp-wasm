@@ -25,6 +25,41 @@ test('covers rejects unparsable instants with a TypeError', () => {
   assert.throws(() => expr.covers(null), TypeError);
 });
 
+test('a string instant that is not a real date-time throws instead of rolling over', () => {
+  const expr = parse('M3 D1'); // March 1, where Date.parse would roll these over to
+  for (const instant of [
+    '2020-02-30T00:00:00Z',
+    '2021-02-29T00:00:00Z',
+    '2020-02-29T24:00:00Z',
+    '2020-04-31T12:00:00+02:00'
+  ]) {
+    assert.throws(() => expr.covers(instant), {
+      name: 'TypeError',
+      message: `Invalid instant: '${instant}' is not a real date-time`
+    });
+  }
+  // real dates on the month's last day still read
+  assert.equal(parse('M2 D29').covers('2020-02-29T23:59:59Z'), true);
+  assert.equal(parse('M4 D30').covers('2026-04-30T12:00:00+02:00'), true);
+  assert.equal(expr.covers('2020-03-01T00:00:00Z'), true);
+});
+
+test('a string instant without an offset is still read in the host zone', () => {
+  const expr = parse('T0900:1800');
+  const local = '2026-07-07T10:00:00';
+  assert.equal(expr.covers(local), expr.covers(new Date(Date.parse(local))));
+});
+
+test('a local date before year 1 reads its era: 1 BCE is year 0', () => {
+  // 0001-01-01T03:00:00Z is 22:03:58 on Dec 31 of 1 BCE in New York (LMT -4:56:02);
+  // year 0 is a leap year, so that is its 366th day.
+  const t = '0001-01-01T03:00:00Z';
+  const tz = { tz: 'America/New_York' };
+  assert.equal(parse('D366 Y*').covers(t, tz), true);
+  assert.equal(parse('Y1').covers(t, tz), false);
+  assert.equal(parse('M12 D31 T2203:2204').covers(t, tz), true);
+});
+
 test('the zone parameter defaults to UTC and accepts an IANA identifier', () => {
   const expr = parse('T0900:1800 E1:5');
   // 07:00Z is 09:00 in Berlin (summer, +2) — covered there, not in UTC.
@@ -107,7 +142,32 @@ test('a parsed expression is frozen, bound or not', () => {
 
 test('an unknown zone throws a RangeError, like Intl everywhere', () => {
   const expr = parse('T0900:1800');
-  assert.throws(() => expr.covers(TUE_10_UTC, { tz: 'Not/AZone' }), RangeError);
+  assert.throws(() => expr.covers(TUE_10_UTC, { tz: 'Not/AZone' }), {
+    name: 'RangeError',
+    message: 'Unknown time zone: "Not/AZone"'
+  });
+});
+
+test('a zone is a tz database zone or link name, matched without regard to case', () => {
+  const expr = parse('T0900:1800 E1:5');
+  const t = '2026-07-07T07:00:00Z'; // 09:00 in Berlin
+  for (const tz of ['Europe/Berlin', 'europe/berlin', 'EUROPE/BERLIN', 'Etc/GMT-2', 'etc/gmt-2']) {
+    assert.equal(expr.covers(t, { tz }), true, tz);
+  }
+  assert.equal(expr.covers(t, { tz: 'US/Eastern' }), false); // a link name, 03:00 there
+  assert.equal(expr.covers(t, { tz: 'utc' }), false);
+  assert.equal(expr.withZone('etc/gmt-2').zone, 'Etc/GMT-2');
+});
+
+test('a fixed offset or a name only Intl knows is an unknown zone', () => {
+  const expr = parse('T0900:1800');
+  for (const tz of ['+02:00', '-05:00', '+0200', 'SystemV/AST4', 'systemv/est5edt', 'PST', 'ist']) {
+    assert.throws(() => expr.covers(TUE_10_UTC, { tz }), {
+      name: 'RangeError',
+      message: `Unknown time zone: "${tz}"`
+    });
+    assert.throws(() => expr.withZone(tz), RangeError, tz);
+  }
 });
 
 test('parse errors are DTRExpSyntaxError with position and expression', () => {
@@ -122,6 +182,14 @@ test('parse errors are DTRExpSyntaxError with position and expression', () => {
     assert.equal(e.expression, 'T0900:1800 E9');
     assert.match(e.message, /at position \d+ in 'T0900:1800 E9'/);
   }
+});
+
+test('counts up to the integer limit evaluate without trapping the module', () => {
+  assert.equal(parse('Y1:*/2147483647').covers('0001-06-01T00:00:00Z'), true);
+  const long = parse('20200101/2147483647Y/2147483646Y');
+  assert.equal(long.covers('2019-12-31T23:00:00Z'), false);
+  assert.equal(long.covers('9999-12-31T23:00:00Z', { tz: 'Europe/Berlin' }), true);
+  assert.throws(() => parse('Y1:*/2147483648'), { name: 'DTRExpSyntaxError', position: 5 });
 });
 
 test('validate mirrors parse: errors make valid false, warnings never do', () => {
@@ -149,5 +217,5 @@ test('a parsed expression exposes source, frozen warnings and toString', () => {
 });
 
 test('SPEC_DRAFT names the implemented draft', () => {
-  assert.equal(SPEC_DRAFT, 2.9);
+  assert.equal(SPEC_DRAFT, 3);
 });

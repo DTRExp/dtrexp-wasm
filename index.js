@@ -34,7 +34,9 @@ function formatterFor(tz) {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hourCycle: 'h23'
+      hourCycle: 'h23',
+      // without it a year before 1 reads as its BCE number: 1 BCE would be year 1
+      era: 'short'
     });
     formatters.set(tz, fmt);
   }
@@ -59,8 +61,12 @@ function offsetAt(tz, instantMs) {
   let hour = 0;
   let minute = 0;
   let second = 0;
+  let bce = false;
   for (const part of formatterFor(tz).formatToParts(instantMs)) {
     switch (part.type) {
+      case 'era':
+        bce = part.value === 'BC';
+        break;
       case 'year':
         year = Number(part.value);
         break;
@@ -83,11 +89,90 @@ function offsetAt(tz, instantMs) {
         break;
     }
   }
-  const localSec = (epochDay(year, month, day) * 24 + hour) * 3600 + minute * 60 + second;
+  // proleptic ISO years, as the core reads them: 1 BCE is year 0, 2 BCE year -1
+  const isoYear = bce ? 1 - year : year;
+  const localSec = (epochDay(isoYear, month, day) * 24 + hour) * 3600 + minute * 60 + second;
   return localSec - Math.floor(instantMs / 1000);
 }
 
 registerZoneProvider(offsetAt);
+
+// ---- zone identifiers ------------------------------------------------------
+// The accepted names are the tz database's zone and link names, matched without
+// regard to case (API.md). `Intl` accepts more than that, so what it resolves is
+// checked the way the reference implementation checks it.
+
+/**
+ *  Names `Intl` accepts that are not tz database zone or link names: ICU's legacy
+ *  three-letter IDs, and two names the tz database has since removed. Held upper-case,
+ *  since zone names match without regard to case. `SystemV/…` names and fixed offsets
+ *  are refused by their shape instead.
+ */
+const ICU_ONLY_NAMES = new Set([
+  'ACT',
+  'AET',
+  'AGT',
+  'ART',
+  'AST',
+  'BET',
+  'BST',
+  'CAT',
+  'CNT',
+  'CST',
+  'CTT',
+  'EAT',
+  'ECT',
+  'IET',
+  'IST',
+  'JST',
+  'MIT',
+  'NET',
+  'NST',
+  'PLT',
+  'PNT',
+  'PRT',
+  'PST',
+  'SST',
+  'VST',
+  'CANADA/EAST-SASKATCHEWAN',
+  'US/PACIFIC-NEW'
+]);
+
+/**
+ *  Whether `Intl` resolved `tz` as a tz database zone or link name, not as a fixed
+ *  offset (`'+02:00'` resolves to itself) or a name only ICU knows.
+ */
+function isTzName(tz, resolved) {
+  const name = tz.toUpperCase();
+  return !/^[+-]/.test(resolved) && !name.startsWith('SYSTEMV/') && !ICU_ONLY_NAMES.has(name);
+}
+
+const zoneNames = new Map();
+/** Names kept before the cache is cleared; it is keyed on input, which a caller may vary without end. */
+const ZONE_NAME_CAP = 4096;
+
+/**
+ *  The canonical name of an IANA zone as the platform resolves it (`'utc'`,
+ *  `'Etc/UTC'` and `'GMT'` → `'UTC'`; `'europe/berlin'` → `'Europe/Berlin'`).
+ *  Throws `RangeError` on anything but a tz database zone or link name: a zone the
+ *  platform does not know, a fixed offset (`'+02:00'`), or a name only ICU knows
+ *  (`'PST'`, `'SystemV/AST4'`).
+ */
+function resolveZone(tz) {
+  if (tz === 'UTC') return tz;
+  let name = zoneNames.get(tz);
+  if (name === undefined) {
+    try {
+      name = new Intl.DateTimeFormat('en-US', { timeZone: tz }).resolvedOptions().timeZone;
+    } catch {
+      throw new RangeError(`Unknown time zone: "${tz}"`);
+    }
+    if (!isTzName(tz, name)) throw new RangeError(`Unknown time zone: "${tz}"`);
+    if (zoneNames.size >= ZONE_NAME_CAP) zoneNames.clear();
+    zoneNames.set(tz, name);
+  }
+  return name;
+}
 
 // ---- the public API --------------------------------------------------------
 
@@ -96,7 +181,7 @@ export class DTRExpSyntaxError extends Error {
   constructor(message, expression, position) {
     super(`${message} (at position ${position} in '${expression}')`);
     this.name = 'DTRExpSyntaxError';
-    /** 0-based character offset into the expression, where known. */
+    /** 0-based offset of the first character of the token at fault (spec §8). */
     this.position = position;
     /** The offending expression, verbatim. */
     this.expression = expression;
@@ -106,11 +191,43 @@ export class DTRExpSyntaxError extends Error {
 function toEpochMs(input) {
   if (input instanceof Date) return checkFinite(input.getTime());
   if (typeof input === 'number') return checkFinite(input);
-  if (typeof input === 'string') return checkFinite(Date.parse(input));
+  if (typeof input === 'string') return parseInstant(input);
   if (typeof input === 'object' && input !== null && 'epochMilliseconds' in input) {
     return checkFinite(input.epochMilliseconds);
   }
   throw new TypeError('Expected a Date, epoch milliseconds, ISO 8601 string or Temporal instant');
+}
+
+/**
+ *  An ISO 8601 date anywhere in the string (`Date.parse` reads `' 2020-02-30'` too), and
+ *  its hour. An extended year (`+002021`) matches by its last four digits, which name
+ *  the same leap year: years 10,000 apart are 25 whole 400-year cycles apart.
+ */
+const ISO_DATE = /(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}))?/;
+
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function daysInMonth(year, month) {
+  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  return month === 2 && leap ? 29 : DAYS_IN_MONTH[month - 1];
+}
+
+/**
+ *  Reads a string instant. `Date.parse` rolls an impossible date over (`2020-02-30` is
+ *  March 1, `T24:00` the next day); a string instant must be a real date-time, so
+ *  those throw instead. A string without an offset is still read in the host's zone,
+ *  as `Date.parse` reads it; 2.0 will reject it.
+ */
+function parseInstant(input) {
+  const ms = checkFinite(Date.parse(input));
+  const iso = ISO_DATE.exec(input);
+  if (
+    iso &&
+    (Number(iso[3]) > daysInMonth(Number(iso[1]), Number(iso[2])) || Number(iso[4]) > 23)
+  ) {
+    throw new TypeError(`Invalid instant: '${input}' is not a real date-time`);
+  }
+  return ms;
 }
 
 /** The zone a call evaluates in: its own `{ tz }`, else the bound zone, else UTC. */
@@ -119,7 +236,7 @@ function zoneOf(opts, bound) {
     throw new TypeError(`Pass the time zone as { tz: '${opts}' }`);
   }
   const tz = opts?.tz;
-  return tz == null ? (bound ?? 'UTC') : checkZoneName(tz);
+  return tz == null ? (bound ?? 'UTC') : resolveZone(checkZoneName(tz));
 }
 
 /** A non-string would reach the module as a bad pointer, and the core reads `''` as UTC. */
@@ -153,20 +270,20 @@ export class DTRExp {
 
   /**
    *  A copy whose evaluation defaults to `tz`, readable as `zone`; this one is
-   *  left as it is. A `{ tz }` passed to a call still wins. An unknown zone
-   *  throws `Intl`'s `RangeError` at once, and one that is not a string a
-   *  `TypeError` (`Intl` would read `undefined` as the host's zone).
+   *  left as it is. A `{ tz }` passed to a call still wins. A name that is not a
+   *  tz database zone or link name throws a `RangeError` at once, and one that
+   *  is not a string a `TypeError` (`Intl` would read `undefined` as the host's
+   *  zone).
    */
   withZone(tz) {
-    const name = new Intl.DateTimeFormat('en-US', { timeZone: checkZoneName(tz) }).resolvedOptions()
-      .timeZone;
-    return new DTRExp(this.#inner, this.source, name, this.warnings);
+    return new DTRExp(this.#inner, this.source, resolveZone(checkZoneName(tz)), this.warnings);
   }
 
   /**
    *  Whether the expression covers the given instant, evaluated in `opts.tz`
    *  (IANA identifier), else the bound `zone`, else `'UTC'`. An unknown zone
-   *  throws a `RangeError`.
+   *  throws a `RangeError`, and a string instant that is not a real date-time
+   *  (`'2020-02-30T00:00:00Z'`) a `TypeError`.
    */
   covers(instant, opts) {
     return this.#inner.covers(toEpochMs(instant), zoneOf(opts, this.zone));
@@ -201,4 +318,4 @@ export function validate(expression) {
 }
 
 /** The DTRExp specification draft this package implements. */
-export const SPEC_DRAFT = 2.9;
+export const SPEC_DRAFT = 3;

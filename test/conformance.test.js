@@ -30,16 +30,21 @@ test('coverage: every instant in every group returns the expected boolean', () =
   console.log(`  coverage: ${checks} checks across ${vectors.coverage.length} groups`);
 });
 
-test('invalid: every expression is rejected at parse', () => {
+test('invalid: every expression is rejected at parse, at the position the vector gives', () => {
   for (const c of vectors.invalid) {
     assert.throws(
       () => parse(c.expression),
-      { name: 'DTRExpSyntaxError' },
-      `'${c.expression}' should be rejected (${c.reason})`
+      { name: 'DTRExpSyntaxError', position: c.position },
+      `'${c.expression}' should be rejected at ${c.position} (${c.reason})`
     );
     const result = validate(c.expression);
     assert.equal(result.valid, false, `validate('${c.expression}') should be invalid`);
-    assert.ok(result.errors.length > 0, `validate('${c.expression}') should carry errors`);
+    assert.equal(result.errors.length, 1, `validate('${c.expression}') should carry the error`);
+    assert.equal(
+      result.errors[0].position,
+      c.position,
+      `validate('${c.expression}') should name position ${c.position}`
+    );
   }
 });
 
