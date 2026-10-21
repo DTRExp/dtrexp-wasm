@@ -26,7 +26,10 @@
     "test": "node --test",
     "prepublishOnly": "npm run build && npm test"
   },
-  "repository": "DTRExp/dtrexp-wasm",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DTRExp/dtrexp-wasm.git"
+  },
   "homepage": "https://dtrexp.org",
   "bugs": {
     "url": "https://github.com/DTRExp/dtrexp-wasm/issues"
