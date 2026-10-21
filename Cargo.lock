@@ -22,7 +22,7 @@ checksum = "61bbdcd219faab8d6a99b13b14bec90e19b045d67603ee536cf9ff358533b0df"
 
 [[package]]
 name = "dtrexp-wasm"
-version = "1.0.0"
+version = "1.2.0"
 dependencies = [
  "dtrexp",
  "js-sys",
