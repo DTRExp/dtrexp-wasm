@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://www.npmjs.com/package/dtrexp-wasm"><img src="https://img.shields.io/npm/v/dtrexp-wasm?style=flat&label=&logo=npm&color=C6234B" alt="npm" /></a>
-  <img src="https://img.shields.io/badge/conformance-451%2F451-2BB150?style=flat" alt="conformance 451/451" />
+  <img src="https://img.shields.io/badge/conformance-453%2F453-2BB150?style=flat" alt="conformance 453/453" />
   <img src="https://img.shields.io/badge/wasm-~65%20KB-654FF0?style=flat" alt="wasm ~65 KB" />
   <a href="https://gist.github.com/onury/d3f3d765d7db2e8b2d050d14315f2ac7"><img src="https://img.shields.io/badge/ESM-F7DF1E?style=flat" alt="ESM" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat" alt="MIT license" /></a>
@@ -100,7 +100,7 @@ A zone is a tz database zone or link name (`Europe/Berlin`, `US/Eastern`, `UTC`,
 
 ## Conformance
 
-The spec's test vectors are the contract ([spec §12][spec-conformance]); this package implements DTRExp **draft 3**, vendors the draft 3 `vectors.json` and runs all of it in its test suite: 110 groups, 451 checks, including the coverage groups evaluated through the `Intl` zone bridge, and every invalid expression rejected at the position the vector gives.
+The spec's test vectors are the contract ([spec §12][spec-conformance]); this package implements DTRExp **draft 3**, vendors the draft 3 `vectors.json` and runs all of it in its test suite: 111 groups, 453 checks, including the coverage groups evaluated through the `Intl` zone bridge, and every invalid expression rejected at the position the vector gives.
 
 ## Related Projects
 

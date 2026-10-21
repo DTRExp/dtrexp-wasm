@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- `SPEC_DRAFT` is `3`. The package implements DTRExp draft 3 and passes its vectors: 110 groups, 451 checks, and every invalid expression rejected at the position the vector gives.
+- `SPEC_DRAFT` is `3`. The package implements DTRExp draft 3 and passes its vectors: 111 groups, 453 checks, and every invalid expression rejected at the position the vector gives.
 - Fixed an issue where a string instant that is not a real date-time was rolled over to another day: `'2020-02-30T00:00:00Z'` read as March 1, `T24:00` as the next day. It throws `TypeError` now. A string without an offset is still read in the host's zone; 2.0 will reject it.
 - Fixed an issue where a local date before year 1 was read as year 1: 1 BCE is year 0 now, as the Rust core reads it.
 - Fixed an issue where names `Intl` accepts but the tz database does not were taken as zones: a fixed offset (`'+02:00'`), the `SystemV/…` zones and ICU's three-letter IDs (`'PST'`) throw `RangeError` now. Zone names still match without regard to case. An unknown zone's `RangeError` reads `Unknown time zone: "…"`.
