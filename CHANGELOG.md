@@ -1,6 +1,6 @@
 # dtrexp-wasm Changelog
 
-## Unreleased
+## 1.2.0
 
 - `SPEC_DRAFT` is `3`. The package implements DTRExp draft 3 and passes its vectors: 111 groups, 453 checks, and every invalid expression rejected at the position the vector gives.
 - Fixed an issue where a string instant that is not a real date-time was rolled over to another day: `'2020-02-30T00:00:00Z'` read as March 1, `T24:00` as the next day. It throws `TypeError` now. A string without an offset is still read in the host's zone; 2.0 will reject it.
